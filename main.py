@@ -13,6 +13,7 @@ from src.models.tabnet import train_tabnet   # << TabNet 추가
 from src.evaluation import evaluate_classification, confusion_df, class_metrics_df
 from src.report import save_to_excel
 from src.utils import set_seed
+from src.models.tabular_dl import build_node, build_saint, build_ft_transformer
 
 def group_phq_score(score):
     if score <= 4: return 0
@@ -84,6 +85,25 @@ def main():
     )
     tabnet_pred = tabnet_model.predict(X_test_sel)
     tabnet_metrics = evaluate_classification(y_test, tabnet_pred)
+    
+    # --- NODE 실험 ---
+    node_model = build_node(input_dim=X_train_sel.shape[1], output_dim=3)
+    node_model.fit(X_train_sel, y_train_res)
+    node_pred = node_model.predict(X_test_sel)
+    node_metrics = evaluate_classification(y_test, node_pred)
+
+    # --- SAINT 실험 ---
+    saint_model = build_saint(input_dim=X_train_sel.shape[1], output_dim=3)
+    saint_model.fit(X_train_sel, y_train_res)
+    saint_pred = saint_model.predict(X_test_sel)
+    saint_metrics = evaluate_classification(y_test, saint_pred)
+
+    # --- FT-Transformer 실험 ---
+    ft_model = build_ft_transformer(input_dim=X_train_sel.shape[1], output_dim=3)
+    ft_model.fit(X_train_sel, y_train_res)
+    ft_pred = ft_model.predict(X_test_sel)
+    ft_metrics = evaluate_classification(y_test, ft_pred)
+
 
     # --- 리포트 파일명/파라미터/엑셀 저장 ---
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -115,7 +135,11 @@ def main():
         'DNN_ClassMetrics': class_metrics_df(y_test, dnn_pred),
         'CNN_ClassMetrics': class_metrics_df(y_test, cnn_pred),
         "Experiment_Params": pd.DataFrame(list(param_dict.items()), columns=["Parameter", "Value"]),
-        'TabNet_Metrics': pd.DataFrame([tabnet_metrics])
+        'TabNet_Metrics': pd.DataFrame([tabnet_metrics]),
+        'NODE_Metrics': pd.DataFrame([node_metrics]),
++       'SAINT_Metrics': pd.DataFrame([saint_metrics]),
++       'FTTransformer_Metrics': pd.DataFrame([ft_metrics])
+     
     }
     for k, v in ml_results.items():
         report_dict[f"{k}_Metrics"] = pd.DataFrame([v])

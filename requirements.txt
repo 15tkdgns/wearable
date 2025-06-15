@@ -7,3 +7,4 @@ lightgbm
 imblearn
 pytorch-tabnet
 torch
+git+https://github.com/Qwicen/node
